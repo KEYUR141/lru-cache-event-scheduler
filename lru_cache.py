@@ -1,13 +1,25 @@
+"""LRU cache: head.next is least recent; tail.prev is most recent.
+
+get and put take average O(1) time. This class is not thread-safe.
+"""
+
+from collections.abc import Hashable
+
+
 class _Node:
-    def __init__(self,key=None,value=None):
+    def __init__(self, key=None, value=None):
         self.key = key
         self.value = value
         self.next = None
-        self.prev= None
+        self.prev = None
 
 
-class LRUCACHE:
-    def __init__(self,capacity:int):
+class LRUCache:
+    """Cache integer values under hashable keys; a miss returns -1."""
+
+    def __init__(self, capacity: int):
+        if type(capacity) is not int:
+            raise TypeError("Capacity must be an integer")
         if capacity < 0:
             raise ValueError("Capacity cannot be negative")
 
@@ -20,8 +32,7 @@ class LRUCACHE:
         self.head.next = self.tail
         self.tail.prev = self.head
 
-    def _remove(self,node:_Node) -> None:
-
+    def _remove(self, node: _Node) -> None:
         previous_node = node.prev
         next_node = node.next
 
@@ -31,7 +42,7 @@ class LRUCACHE:
         node.prev = None
         node.next = None
 
-    def _add_to_most_recent(self, node: _Node)->None:
+    def _add_to_most_recent(self, node: _Node) -> None:
         previous_node = self.tail.prev
 
         previous_node.next = node
@@ -39,10 +50,9 @@ class LRUCACHE:
         node.next = self.tail
         self.tail.prev = node
 
-    def get(self,key:int) -> int:
+    def get(self, key: Hashable) -> int:
         if key not in self.nodes:
             return -1
-
 
         node = self.nodes[key]
 
@@ -51,15 +61,14 @@ class LRUCACHE:
 
         return node.value
 
-    def put(self, key:int, value:int) -> None:
-
+    def put(self, key: Hashable, value: int) -> None:
         if key in self.nodes:
             node = self.nodes[key]
             node.value = value
 
             self._remove(node)
             self._add_to_most_recent(node)
-            return 
+            return
 
         if self.capacity == 0:
             return
@@ -70,7 +79,7 @@ class LRUCACHE:
             self._remove(least_recent)
             del self.nodes[least_recent.key]
 
-        node = _Node(key,value)
+        node = _Node(key, value)
         self.nodes[key] = node
         self._add_to_most_recent(node)
 
@@ -87,18 +96,12 @@ class LRUCACHE:
         else:
             print("Cache is empty")
 
-if __name__ == '__main__':
-    
-    cache= LRUCACHE(5)
-    cache.put("A",1)
-    cache.put("B",2)
-    cache.put("C",3)
 
-    cache.get("A")
-    cache.display()
-    #cache._add_to_most_recent("B")
-
-    print(cache.get("A"))
-
-
-
+if __name__ == "__main__":
+    cache = LRUCache(2)
+    cache.put("A", 10)
+    cache.put("B", 20)
+    print(cache.get("A"))  # 10; A becomes most recent.
+    cache.put("C", 30)    # Evicts B.
+    print(cache.get("B"))  # -1
+    cache.display()       # A  <------>  C
